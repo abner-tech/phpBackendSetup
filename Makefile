@@ -1,4 +1,4 @@
-include .envrc
+include .env
 
 
 ## db/psql: connect to the database using psql (terminal)
