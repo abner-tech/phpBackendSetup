@@ -4,9 +4,8 @@ use PgSql\Result;
 
 require_once '../middleware/auth/token_type.php';
 require_once '../middleware/auth/token.php';
+require_once '../mailer/mailer.php';
 
-// use packages\PHPMailer\PHPMailer\PHPMailer;
-// use packages\PHPMailer\PHPMailer\Exception;
 class User
 {
 
@@ -21,8 +20,9 @@ class User
     //gettting user from database
     public function getUser(): bool|Result
     {
+        echo time();
         $query = 'SELECT id, created_at, firstname, lastname, email FROM users';
-        $result = pg_prepare($this->conn, "get_users", query: $query);
+        pg_prepare($this->conn, "get_users", query: $query);
         $stmt = pg_execute($this->conn, "get_users", params: []);
         return $stmt;
     }
@@ -90,7 +90,7 @@ class User
 
         // Get the full user details
         $userDetails = $this->getUserByID($userID);
-        $bearer_token = new AuthToken(); //the class with the functions
+        $bearer_token = new AuthToken($this->conn); //the class with the functions
         $tokenTypes = new TokenTypes; //tje types of tokens defined
         $jwt = $bearer_token->createBearerToken($userID, $tokenTypes->auth_token);
 
@@ -107,9 +107,8 @@ class User
         ];
     }
 
-    public function sendRegisteredEmail()
-    {
-        return "";
+    public function sendRegisteredEmail(){
+       
     }
 
 }
