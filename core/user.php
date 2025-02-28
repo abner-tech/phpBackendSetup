@@ -20,7 +20,6 @@ class User
     //gettting user from database
     public function getUser(): bool|Result
     {
-        echo time();
         $query = 'SELECT id, created_at, firstname, lastname, email FROM users';
         pg_prepare($this->conn, "get_users", query: $query);
         $stmt = pg_execute($this->conn, "get_users", params: []);
@@ -47,10 +46,10 @@ class User
         $hashed_password = password_hash(password: $password, algo: PASSWORD_BCRYPT);
         $query = '
             INSERT INTO users
-            (firstname, lastname, email, password_hash, activated)
-            VALUES ($1, $2, $3, $4, $5)
+            (firstname, lastname, email, password_hash)
+            VALUES ($1, $2, $3, $4)
             RETURNING id';
-        $result = pg_query_params(connection: $this->conn, query: $query, params: [$firstname, $lastname, $email, $hashed_password, 'false']);
+        $result = pg_query_params(connection: $this->conn, query: $query, params: [$firstname, $lastname, $email, $hashed_password]);
 
         if ($result) {
             return pg_fetch_result(result: $result, row: 0, field: 'id');
