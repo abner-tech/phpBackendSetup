@@ -70,7 +70,7 @@ class User
         $stmt = pg_query_params($this->conn, $query, [$email]);
 
         if (!$stmt) {
-            return false; // Or handle the error more gracefully
+            return false;
         }
 
         $user = pg_fetch_assoc($stmt);
@@ -87,25 +87,18 @@ class User
             return false; // Password incorrect
         }
 
-        // Get the full user details
-        $userDetails = $this->getUserByID($userID);
-        $bearer_token = new AuthToken($this->conn); //the class with the functions
+        //create new bearer token
+        $bearer_token = new AuthToken($this->conn); //initiate the class with the functions
         $tokenTypes = new TokenTypes; //tje types of tokens defined
         $jwt = $bearer_token->createBearerToken($userID, $tokenTypes->auth_token);
 
-        if (!$userDetails) {
-            //echo 'three';
-            return false;
-        }
-// need to return the jwt, and the user details as json to api user file
-        $userDetails = pg_fetch_assoc($userDetails);
-
         return [
-            'userInfo' => $userDetails,
+            'userID' => $userID,
             'tokenInfo' => $jwt,
         ];
     }
 
+    //functino to send a welcome email notofication, implamented later
     public function sendRegisteredEmail(){
        
     }

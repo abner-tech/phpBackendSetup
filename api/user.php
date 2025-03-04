@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(response_code: 500);
             echo json_encode(value: ['message' => 'server encountered an error and could not complete your request']);
         }
-    } else if( empty($data['firstname']) && empty($data['lastname']) && !empty(['email']) && !empty(['password'])) {
+    } else if( empty($data['firstname']) && empty($data['lastname']) && !empty(['email']) &&!empty(['password'])) {
         //handle user login
         $result = $user->userLogin(email: $data['email'], password: $data['password']);
         if (!$result) {
