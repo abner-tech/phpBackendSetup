@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT ExISTS color (
+    id BIGSERIAL NOT NULL PRIMARY KEY,
+    color CHARACTER VARYING NOT NULL,
+    description TEXT
+);
