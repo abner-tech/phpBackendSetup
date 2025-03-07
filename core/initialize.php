@@ -9,4 +9,7 @@ require_once '../includes/config.php';
 //load core classes
 require_once __DIR__ . '/user.php';
 
+//load core classes
+require_once __DIR__ . '/color.php';
+
 ?>
