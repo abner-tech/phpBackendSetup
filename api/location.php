@@ -3,22 +3,22 @@
 // Initialize API
 include_once '../core/initialize.php';
 
-// Instantiate the User class
-$color = new Color(db: $dbconn);
+// Instantiate the Location class
+$location = new Location(db: $dbconn);
 
-// Handle GET request to retrieve users
+// Handle GET request to retrieve Locations
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Declare a variable to hold the result
-    $get_color_query =$color->getColors();
+    $get_location_query =$location->getLocations();
 
-    if ($get_color_query) {
-        // Fetch data: All colors => `pg_fetch_all()`
-        $color_data =pg_fetch_all(result: $get_color_query);
+    if ($get_location_query) {
+        // Fetch data: All locations => `pg_fetch_all()`
+        $location_data =pg_fetch_all(result: $get_location_query);
 
-        if ($color_data) {
+        if ($location_data) {
             http_response_code(response_code: 200);
-            echo json_encode(value: ['colors' => $color_data]);
+            echo json_encode(value: ['locations' => $location_data]);
         } else {
             http_response_code(response_code: 404);
             echo json_encode(value: ['message' => 'requested resource not found']);
@@ -30,23 +30,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// Handle POST request to add a new color
+// Handle POST request to add a new location
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the JSON input
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true); 
 
-    //handle register of user
-    if (!empty($data['color'])) {
+    //handle register of location
+    if (!empty($data['farm_name'])) {
       //prepare to insert data
-      $desc = '';
-        if(!empty($data['description'])) {
-            $desc = $data['description'];
+      $loc = '';
+        if(!empty($data['location'])) {
+            $loc = $data['location'];
         }
 
-        $result = $color->createColor($data['color'], $desc);
+        $result = $location->createLocation($data['farm_name'],$loc);
         if($result) {
             http_response_code(response_code: 201);
-            echo json_encode(value: ['message'=> 'color registered successfully', 'color_id'=> $result]);
+            echo json_encode(value: ['message'=> 'location registered successfully', 'location_id'=> $result]);
         }
     } else {
         http_response_code(response_code: 400);

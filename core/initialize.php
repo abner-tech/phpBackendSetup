@@ -12,4 +12,6 @@ require_once __DIR__ . '/user.php';
 //load core classes
 require_once __DIR__ . '/color.php';
 
+require_once __DIR__ . '/location.php';
+
 ?>

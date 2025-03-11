@@ -33,7 +33,8 @@ class User
             created_at,
             firstname,
             lastname,
-            email
+            email, 
+            admin
             FROM users
             WHERE id = $1';
         $stmt = pg_query_params($this->conn, $query, [$userID]);
@@ -92,8 +93,13 @@ class User
         $tokenTypes = new TokenTypes; //tje types of tokens defined
         $jwt = $bearer_token->createBearerToken($userID, $tokenTypes->auth_token);
 
+        $userInfo = $this->getUserByID($userID);
+        if ($userInfo) {
+            $userInfo = pg_fetch_assoc($userInfo);
+        }
+
         return [
-            'userID' => $userID,
+            'userInfo' => $userInfo,
             'tokenInfo' => $jwt,
         ];
     }
