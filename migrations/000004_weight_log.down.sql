@@ -1,1 +1,1 @@
-DELETE TABLE IF EXISTS weight_log;
+DROP TABLE IF EXISTS weight_log;

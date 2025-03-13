@@ -1,6 +1,5 @@
 <?php
 
-
 class AuthToken {
 
     private string $secretKey;

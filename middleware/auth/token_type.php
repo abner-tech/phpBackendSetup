@@ -1,5 +1,7 @@
 <?php
 
+namespace Middleware\Auth;
+
 class TokenTypes {
 
 public $auth_token = 'Authorization';

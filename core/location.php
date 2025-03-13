@@ -19,8 +19,8 @@ class Location
     public function getLocations(): bool|Result
     {
         $query = 'SELECT id, farm_name FROM location';
-        pg_prepare($this->conn, "get_colors", query: $query);
-        $stmt = pg_execute($this->conn, "get_colors", params: []);
+        pg_prepare($this->conn, "get_locations", query: $query);
+        $stmt = pg_execute($this->conn, "get_locations", params: []);
         return $stmt;
     }
 
