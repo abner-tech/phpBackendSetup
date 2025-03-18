@@ -41,6 +41,26 @@ class Location
         }
     }
 
+    public function InsertAnimalLocation($animal_id, $new_farm_id, $old_location_move_id, $added_by_id) {
+        $query = '
+        INSERT INTO location_move
+        (animal_id, new_farm_id, old_location_move_id, added_by_id)
+        VALUES ( $1, $2, $3, $4)
+        RETURNING id
+        ';
+
+        $location_result_id = pg_query_params($this->conn, $query, [
+            $animal_id, $new_farm_id, $old_location_move_id, $added_by_id
+        ]);
+
+        if ($location_result_id) {
+            $id = (int) pg_fetch_result(result: $location_result_id, row: 0, field: 'id');
+            return $id;
+        } else {
+           return 'failure to save animal location';
+        }
+    }
+
 }
 
 ?>

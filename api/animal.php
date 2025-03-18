@@ -10,11 +10,11 @@ $animal = new animal(db: $dbconn);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Declare a variable to hold the result
-    $get_animal_query =$animal->getanimals();
+    $get_animal_query = $animal->getanimals();
 
     if ($get_animal_query) {
         // Fetch data: All animals => `pg_fetch_all()`
-        $animal_data =pg_fetch_all(result: $get_animal_query);
+        $animal_data = pg_fetch_all(result: $get_animal_query);
 
         if ($animal_data) {
             http_response_code(response_code: 200);
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['dam_id'],
             $data['dob'],
             $data['gender'],
-            $data['added_by_id']
+            $data['added_by_id'], $data['image'], $data['location_id'],
         );
         if($result) {
             http_response_code(response_code: 201);
