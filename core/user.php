@@ -6,6 +6,8 @@ require_once '../middleware/auth/token_type.php';
 require_once '../middleware/auth/token.php';
 require_once '../mailer/mailer.php';
 
+use Middleware\Auth\TokenTypes;
+
 class User
 {
 

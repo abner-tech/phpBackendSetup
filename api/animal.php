@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true); 
 
     //verifying required fields are given before db insert
-    if (!empty($data['added_by_id']) && !empty($data['color_id']) && !empty($data['location'])) {
+    if (!empty($data['added_by_id']) && !empty($data['color_id']) && !empty($data['location_id'])) {
       //prepare to insert data
 
         $result = $animal->addAnimal(

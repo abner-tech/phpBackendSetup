@@ -37,32 +37,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // Handle POST request to add a new user or login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the JSON input
-    $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
+    $data = json_decode(file_get_contents("php://input"), true);
 
-    //handle register of user
+    if (empty($data)) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Invalid JSON input']);
+        exit;
+    }
+
+    // Handle register of user
     if (!empty($data['firstname']) && !empty($data['lastname']) && !empty($data['email']) && !empty($data['password'])) {
-        $result = $user->createUser(firstname: $data['firstname'], lastname: $data['lastname'], email: $data['email'], password: $data['password']);
-        if ($result) {
-            http_response_code(response_code: 201);
-            echo json_encode(value: ['message' => 'User created successfully', 'user_ID' => $result]);
-        } else {
-            http_response_code(response_code: 500);
-            echo json_encode(value: ['message' => 'server encountered an error and could not complete your request']);
-        }
-    } else if( empty($data['firstname']) && empty($data['lastname']) && !empty(['email']) &&!empty(['password'])) {
-        //handle user login
-        $result = $user->userLogin(email: $data['email'], password: $data['password']);
-        if (!$result) {
-            http_response_code(404);
-            echo json_encode(value: ['message' => 'the requested resoure could not be found']);
+
+        // Sanitize input
+        $firstname = htmlspecialchars(trim($data['firstname']));
+        $lastname = htmlspecialchars(trim($data['lastname']));
+        $email = filter_var(trim($data['email']), FILTER_SANITIZE_EMAIL);
+        $password = trim($data['password']); // Password should be hashed, not just trimmed
+
+        // Validate email
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid email format']);
             exit;
         }
-        //$user = pg_fetch_assoc($result);
-        echo json_encode(value: ['data'=> $result]);
+
+        // Validate other fields (add more validation as needed)
+        if (empty($firstname) || empty($lastname) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Fields cannot be empty after sanitization']);
+            exit;
+        }
+
+        // Create user
+        $result = $user->createUser($firstname, $lastname, $email, $password);
+
+        if ($result) {
+            http_response_code(201);
+            echo json_encode(['message' => 'User created successfully', 'user_ID' => $result]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['message' => 'Server encountered an error and could not complete your request']);
+        }
+    } else if (empty($data['firstname']) && empty($data['lastname']) && !empty($data['email']) && !empty($data['password'])) { // Corrected array access
+
+        // Handle user login
+        $email = filter_var(trim($data['email']), FILTER_SANITIZE_EMAIL);
+        $password = trim($data['password']);
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid email format']);
+            exit;
+        }
+
+        $result = $user->userLogin($email, $password);
+
+        if (!$result) {
+            http_response_code(404);
+            echo json_encode(['message' => 'The requested resource could not be found']);
+            exit;
+        }
+
+        echo json_encode(['data' => $result]);
 
     } else {
-        http_response_code(response_code: 400);
-        echo json_encode(value: ['message' => 'Invalid input']);
+        http_response_code(400);
+        echo json_encode(['message' => 'Invalid input']);
     }
     exit;
 }
