@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS animal (
     added_by_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     visible BOOLEAN NOT NULL DEFAULT TRUE,
     created_timestamp timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_timestamp timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_timestamp timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

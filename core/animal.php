@@ -18,12 +18,30 @@ class animal
     //gettting Animals from database
     public function getanimals(): bool|Result
     {
-        $query = 'SELECT
-        id, blpa_number, color_id, sire_id, dam_id,
-        dob, gender, added_by_id, created_timestamp, updated_timestamp
-        FROM animal
-        WHERE visible = true
-        LIMIT 200';
+
+        //query to fetch the animal with the latest location of the animal
+        $query = '
+        SELECT
+            a.id, a.blpa_number, c.color, a.sire_id, a.dam_id,
+            a.dob, a.gender, a.added_by_id, a.created_timestamp AS created_date,
+    		a.updated_timestamp AS updated_date, i.image_data AS image , l.farm_name AS location
+        FROM animal AS a
+        INNER JOIN color AS c ON a.color_id = c.id
+        INNER JOIN (
+	        SELECT
+	            animal_id, MAX(created_at) AS latest_move
+	        FROM location_move
+            GROUP BY animal_id
+        ) AS latest_lm ON a.id = latest_lm.animal_id
+        INNER JOIN location_move 
+            AS lm 
+            ON a.id = lm.animal_id
+		    AND lm.created_at = latest_lm.latest_move
+        INNER JOIN location AS l ON lm.new_farm_id = l.id
+        INNER JOIN image AS i ON i.location_move_id = lm.id
+        WHERE a.visible = true
+        LIMIT 200
+        ';
         pg_prepare($this->conn, "get_animals", query: $query);
         $stmt = pg_execute($this->conn, "get_animals", params: []);
         return $stmt;
