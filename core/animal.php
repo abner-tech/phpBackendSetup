@@ -24,7 +24,7 @@ class animal
         SELECT
             a.id, a.blpa_number, c.color, a.sire_id, a.dam_id,
             a.dob, a.gender, a.added_by_id, a.created_timestamp AS created_date,
-    		a.updated_timestamp AS updated_date, i.image_data AS image , l.farm_name AS location
+    		a.updated_timestamp AS updated_date, encode (i.image_data, \'escape\') AS image , l.farm_name AS location
         FROM animal AS a
         INNER JOIN color AS c ON a.color_id = c.id
         INNER JOIN (
@@ -38,7 +38,7 @@ class animal
             ON a.id = lm.animal_id
 		    AND lm.created_at = latest_lm.latest_move
         INNER JOIN location AS l ON lm.new_farm_id = l.id
-        INNER JOIN image AS i ON i.location_move_id = lm.id
+        LEFT JOIN image AS i ON i.location_move_id = lm.id
         WHERE a.visible = true
         LIMIT 200
         ';
@@ -51,14 +51,33 @@ class animal
     //not fully implemented
     public function getAnimalByID($animalID): bool|Result
     {
-        $query = 'SELECT
-            id,
-            created_at,
-            firstname,
-            lastname,
-            email
-            FROM Animals
-            WHERE id = $1';
+        $query = '
+        SELECT 
+            a.id, a.blpa_number, a.color_id, a.sire_id, a.dam_id,
+            a.dob, a.gender, a.added_by_id, a.created_timestamp,
+            lm.new_farm_id AS location_id,
+            encode(i.image_data, \'escape\') AS image_data
+        FROM animal AS a
+        INNER JOIN (
+            SELECT 
+                animal_id,
+                MAX(created_at) AS latest_move
+            FROM location_move
+            GROUP BY animal_id
+        ) AS latest_lm ON a.id = latest_lm.animal_id
+        INNER JOIN location_move AS lm 
+            ON latest_lm.latest_move = lm.created_at 
+            AND a.id = lm.animal_id
+        LEFT JOIN LATERAL (
+            SELECT i.image_data
+            FROM image AS i
+            WHERE i.location_move_id = lm.id
+            ORDER BY i.created_timestamp DESC
+            LIMIT 1
+        ) AS i ON TRUE
+        WHERE a.id = $1;
+
+        ';
         $stmt = pg_query_params($this->conn, $query, [$animalID]);
         return $stmt;
 
@@ -149,7 +168,7 @@ class animal
         $returnArray['location_id'] = $location_result_id;
 
         //then validate and insert the image of the animal if given
-        if ($image_Data !== '' || $image_Data !== null) {
+        if ($image_Data !== '' && $image_Data !== null) {
             $imageClass = new Image($this->conn);
             $image_result_id = $imageClass->InsertImage(null, $location_result_id, $image_Data);
 
