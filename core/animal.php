@@ -16,7 +16,7 @@ class animal
     }
 
     //gettting Animals from database
-    public function getanimals(): bool|Result
+    public function getanimals($sortField, $search, $order_by): bool|Result
     {
 
         //query to fetch the animal with the latest location of the animal
@@ -39,11 +39,18 @@ class animal
 		    AND lm.created_at = latest_lm.latest_move
         INNER JOIN location AS l ON lm.new_farm_id = l.id
         LEFT JOIN image AS i ON i.location_move_id = lm.id
-        WHERE a.visible = true
+        WHERE 
+            a.visible = true AND
+            (
+                 to_tsvector(\'simple\', a.blpa_number::TEXT) @@ plainto_tsquery(\'simple\', $1) 
+                OR to_tsvector(\'simple\', a.id::TEXT) @@ plainto_tsquery(\'simple\', $1)
+                OR $1 = \'\'
+            )
+        ORDER BY $2
         LIMIT 200
         ';
         pg_prepare($this->conn, "get_animals", query: $query);
-        $stmt = pg_execute($this->conn, "get_animals", params: []);
+        $stmt = pg_execute($this->conn, "get_animals", params: [$search, $sortField]);
         return $stmt;
     }
 
@@ -107,6 +114,7 @@ class animal
         return ($formattedDate && $formattedDate->format('Y-m-d') === $date) ? $formattedDate->format('Y-m-d') : null;
     }
 
+    //add animal to db
     public function addAnimal($blpa_num, $color_id, $sire_id, $dam_id, $dob, $gender, $added_by_id, $image_Data, $location_id)
     {
         $blpa_num = $this->sanitizeIntegerOrNull($blpa_num);
@@ -180,6 +188,21 @@ class animal
         }
 
         return $returnArray;
+    }
+
+
+    //function to fetch based on the search form the db for selecteion
+    public function search($search, $sex)
+    {
+        $query = '
+            SELECT id, blpa_number
+            FROM ANIMAL
+            WHERE (id::TEXT LIKE $1 OR blpa_number::TEXT LIKE $1) 
+                AND visible = true AND LOWER(gender) = LOWER($2)
+            LIMIT 5
+        ';
+        $stmt = pg_query_params($this->conn, $query, ['%' . $search . '%', $sex]);
+        return $stmt;
     }
 
 }

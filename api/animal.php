@@ -10,17 +10,18 @@ $animal = new animal(db: $dbconn);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     
-    if (isset($_GET['sire_dam'])) { //fwetching for a list to select
+    if (isset($_GET['search_id'])) { //fwetching for a list to select
         $search = $_GET['search_id'];
-        $sex = $_GET['sire_dam'];
+        $sex = $_GET['sex'];
         $result = $animal->search($search, $sex);
 
-        if (!$result) {
+        if ($result == false) {
             http_response_code(404);
             echo json_encode(value: ['message' => 'requested resource not found']);
+            exit;
         }
 
-        $animal_data = pg_fetch_assoc($result);
+        $animal_data = pg_fetch_all($result);
         http_response_code(200);
         echo json_encode($animal_data);
 
@@ -31,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$result) {
             http_response_code(404);
             echo json_encode(value: ['message' => 'requested resource not found']);
+            exit;
         }
 
         $animal_data = pg_fetch_assoc($result);
@@ -40,9 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     } else {
         //all animals fetched
+        $sortField = isset($_GET['sortedField']) ? $_GET['sortedField'] : '';
+        $ORDER_BY= isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
+        $search = isset($_GET['order']) ? $_GET['order'] : '';
 
         // Declare a variable to hold the result
-        $get_animal_query = $animal->getanimals();
+        $get_animal_query = $animal->getanimals($sortField, $search, $ORDER_BY);
 
         if ($get_animal_query) {
             // Fetch data: All animals => `pg_fetch_all()`
@@ -51,9 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             if ($animal_data) {
                 http_response_code(response_code: 200);
                 echo json_encode(value: ['animals' => $animal_data]);
+                exit;
             } else {
                 http_response_code(response_code: 404);
                 echo json_encode(value: ['message' => 'requested resource not found']);
+                exit;
             }
         } else {
             http_response_code(response_code: 500);
