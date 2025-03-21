@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else {
         //all animals fetched
         $sortField = isset($_GET['sortedField']) ? $_GET['sortedField'] : '';
-        $ORDER_BY= isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
-        $search = isset($_GET['order']) ? $_GET['order'] : '';
+        $search= isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
+        $ORDER_BY = isset($_GET['order']) ? $_GET['order'] : '';
 
         // Declare a variable to hold the result
         $get_animal_query = $animal->getanimals($sortField, $search, $ORDER_BY);

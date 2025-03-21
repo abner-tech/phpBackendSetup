@@ -18,11 +18,13 @@ class animal
     //gettting Animals from database
     public function getanimals($sortField, $search, $order_by): bool|Result
     {
-
+        $sortField= $this->sanitizeStringOrNull($sortField);
+        $search= $this->sanitizeStringOrNull($search);
+        $order= $this->sanitizeStringOrNull($order_by);
         //query to fetch the animal with the latest location of the animal
         $query = '
         SELECT
-            a.id, a.blpa_number, c.color, a.sire_id, a.dam_id,
+            a.id, a.blpa_number, c.color as color, a.sire_id, a.dam_id,
             a.dob, a.gender, a.added_by_id, a.created_timestamp AS created_date,
     		a.updated_timestamp AS updated_date, encode (i.image_data, \'escape\') AS image , l.farm_name AS location
         FROM animal AS a
@@ -42,15 +44,14 @@ class animal
         WHERE 
             a.visible = true AND
             (
-                 to_tsvector(\'simple\', a.blpa_number::TEXT) @@ plainto_tsquery(\'simple\', $1) 
-                OR to_tsvector(\'simple\', a.id::TEXT) @@ plainto_tsquery(\'simple\', $1)
+                (a.id::TEXT LIKE $1 OR $1 = \'\') OR
+                (a.blpa_number::TEXT LIKE $1 OR $1 = \'\')
                 OR $1 = \'\'
             )
-        ORDER BY $2
+        ORDER BY ' . pg_escape_string($sortField) . ' ' . pg_escape_string($order_by) . '
         LIMIT 200
         ';
-        pg_prepare($this->conn, "get_animals", query: $query);
-        $stmt = pg_execute($this->conn, "get_animals", params: [$search, $sortField]);
+        $stmt = pg_query_params($this->conn, $query, params: [ '%' . $search . '%']);
         return $stmt;
     }
 
