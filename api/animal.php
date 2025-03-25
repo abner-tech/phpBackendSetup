@@ -91,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['added_by_id'],
             $data['image'],
             $data['location_id'],
+            $data['weight']
         );
         if ($result) {
             http_response_code(response_code: 201);

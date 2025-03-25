@@ -116,7 +116,7 @@ class animal
     }
 
     //add animal to db
-    public function addAnimal($blpa_num, $color_id, $sire_id, $dam_id, $dob, $gender, $added_by_id, $image_Data, $location_id)
+    public function addAnimal($blpa_num, $color_id, $sire_id, $dam_id, $dob, $gender, $added_by_id, $image_Data, $location_id, $weight)
     {
         $blpa_num = $this->sanitizeIntegerOrNull($blpa_num);
         $color_id = $this->sanitizeIntegerOrNull($color_id);
@@ -126,6 +126,7 @@ class animal
         $gender = $this->sanitizeStringOrNull($gender);
         $added_by_id = $this->sanitizeIntegerOrNull($added_by_id);
         $location_id = $this->sanitizeIntegerOrNull($location_id);
+        $weight = $this->sanitizeIntegerOrNull($weight);
 
         //insert animal info first
         $query = '
@@ -186,6 +187,11 @@ class animal
             } elseif (is_int($image_result_id)) {
                 $returnArray['image_id'] = $image_result_id;
             }
+        }
+
+        //insert the location of the animal if given
+        if($weight && $weight !== null) {
+            
         }
 
         return $returnArray;
