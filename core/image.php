@@ -20,6 +20,7 @@ class Image
 
     public function InsertImage( $weightID, $locationMoveID, $image_Data) 
     {
+        //validation of image is done before insert
         if (
             !is_string($image_Data) ||
             !preg_match('/^data:image\/(png|jpeg|gif);base64,/', $image_Data)

@@ -60,7 +60,6 @@ class Location
            return 'failure to save animal location';
         }
     }
-
 }
 
 ?>

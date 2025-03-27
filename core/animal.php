@@ -2,8 +2,6 @@
 
 use PgSql\Result;
 
-require_once '../middleware/auth/token.php';
-
 class animal
 {
 
@@ -18,15 +16,13 @@ class animal
     //gettting Animals from database
     public function getanimals($sortField, $search, $order_by): bool|Result
     {
-        $sortField= $this->sanitizeStringOrNull($sortField);
-        $search= $this->sanitizeStringOrNull($search);
-        $order= $this->sanitizeStringOrNull($order_by);
         //query to fetch the animal with the latest location of the animal
         $query = '
         SELECT
             a.id, a.blpa_number, c.color as color, a.sire_id, a.dam_id,
             a.dob, a.gender, a.added_by_id, a.created_timestamp AS created_date,
-    		a.updated_timestamp AS updated_date, encode (i.image_data, \'escape\') AS image , l.farm_name AS location
+    		a.updated_timestamp AS updated_date, encode (i.image_data, \'escape\') AS image , 
+            l.farm_name AS location, wl.weight AS weight
         FROM animal AS a
         INNER JOIN color AS c ON a.color_id = c.id
         INNER JOIN (
@@ -35,12 +31,21 @@ class animal
 	        FROM location_move
             GROUP BY animal_id
         ) AS latest_lm ON a.id = latest_lm.animal_id
-        INNER JOIN location_move 
+        LEFT JOIN location_move 
             AS lm 
             ON a.id = lm.animal_id
 		    AND lm.created_at = latest_lm.latest_move
         INNER JOIN location AS l ON lm.new_farm_id = l.id
         LEFT JOIN image AS i ON i.location_move_id = lm.id
+        INNER JOIN (
+            SELECT animal_id, MAX(created_timestamp) AS latest_weight
+            FROM weight_log
+            GROUP BY animal_id
+        ) AS latest_wl ON a.id = latest_wl.animal_id
+         LEFT JOIN weight_log
+            AS wl
+            ON a.id = wl.animal_id
+            AND wl.created_timestamp = latest_wl.latest_weight
         WHERE 
             a.visible = true AND
             (
@@ -51,25 +56,20 @@ class animal
         ORDER BY ' . pg_escape_string($sortField) . ' ' . pg_escape_string($order_by) . '
         LIMIT 200
         ';
-        $stmt = pg_query_params($this->conn, $query, params: [ '%' . $search . '%']);
+        $stmt = pg_query_params($this->conn, $query, params: ['%' . $search . '%']);
         return $stmt;
     }
-
 
     //not fully implemented
     public function getAnimalByID($animalID): bool|Result
     {
         $query = '
         SELECT 
-            a.id, a.blpa_number, a.color_id, a.sire_id, a.dam_id,
-            a.dob, a.gender, a.added_by_id, a.created_timestamp,
-            lm.new_farm_id AS location_id,
-            encode(i.image_data, \'escape\') AS image_data
+            a.id, a.blpa_number, a.color_id, a.sire_id, a.dam_id, a.dob, a.gender, a.added_by_id, a.created_timestamp,
+            lm.new_farm_id AS location_id, encode(i.image_data, \'escape\') AS image_data, wl.weight
         FROM animal AS a
         INNER JOIN (
-            SELECT 
-                animal_id,
-                MAX(created_at) AS latest_move
+            SELECT animal_id, MAX(created_at) AS latest_move
             FROM location_move
             GROUP BY animal_id
         ) AS latest_lm ON a.id = latest_lm.animal_id
@@ -83,6 +83,13 @@ class animal
             ORDER BY i.created_timestamp DESC
             LIMIT 1
         ) AS i ON TRUE
+        INNER JOIN (
+            SELECT wl.animal_id, MAX(created_timestamp) AS latest_weight
+            FROM weight_log AS wl
+            GROUP BY wl.animal_id
+        ) AS latest_wl ON a.id = latest_wl.animal_id
+         LEFT JOIN weight_log
+         AS wl ON a.id = wl.animal_id AND wl.created_timestamp = latest_wl.latest_weight
         WHERE a.id = $1;
 
         ';
@@ -91,42 +98,21 @@ class animal
 
     }
 
-    //sanitation of input values
-    private function sanitizeIntegerOrNull($value)
-    {
-        $sanitized = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-        return ($sanitized === false || $sanitized === null) ? null : $sanitized;
-    }
-
-    // Function to sanitize a string and return null if empty
-    private function sanitizeStringOrNull($value)
-    {
-        $sanitized = filter_var($value, FILTER_SANITIZE_STRING);
-        return empty($sanitized) ? null : $sanitized;
-    }
-
-    // Function to sanitize a date and return null if invalid
-    private function sanitizeDateOrNull($date)
-    {
-        if (empty($date)) {
-            return null;
-        }
-        $formattedDate = DateTime::createFromFormat('Y-m-d', $date);
-        return ($formattedDate && $formattedDate->format('Y-m-d') === $date) ? $formattedDate->format('Y-m-d') : null;
-    }
 
     //add animal to db
-    public function addAnimal($blpa_num, $color_id, $sire_id, $dam_id, $dob, $gender, $added_by_id, $image_Data, $location_id, $weight)
-    {
-        $blpa_num = $this->sanitizeIntegerOrNull($blpa_num);
-        $color_id = $this->sanitizeIntegerOrNull($color_id);
-        $sire_id = $this->sanitizeIntegerOrNull($sire_id);
-        $dam_id = $this->sanitizeIntegerOrNull($dam_id);
-        $dob = $this->sanitizeDateOrNull($dob);
-        $gender = $this->sanitizeStringOrNull($gender);
-        $added_by_id = $this->sanitizeIntegerOrNull($added_by_id);
-        $location_id = $this->sanitizeIntegerOrNull($location_id);
-        $weight = $this->sanitizeIntegerOrNull($weight);
+    public function addAnimal(
+        $blpa_num,
+        $color_id,
+        $sire_id,
+        $dam_id,
+        $dob,
+        $gender,
+        $added_by_id,
+        $image_Data,
+        $location_id,
+        $weight,
+        $weight_memo
+    ) {
 
         //insert animal info first
         $query = '
@@ -190,8 +176,20 @@ class animal
         }
 
         //insert the location of the animal if given
-        if($weight && $weight !== null) {
-            
+        if ($weight && $weight !== null) {
+            $weightClass = new Weight($this->conn);
+            $weight_result_id = $weightClass->createWeight(
+                $animal_result_id,
+                $weight,
+                $weight_memo
+            );
+
+            if( !is_int($weight_result_id) && is_string($weight_result_id)) {
+                $returnArray['error'] = $weight_result_id;
+                return $returnArray;
+            }
+
+            $returnArray['weight_log_id'] = $weight_result_id;
         }
 
         return $returnArray;

@@ -46,6 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $search= isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
         $ORDER_BY = isset($_GET['order']) ? $_GET['order'] : '';
 
+        //sanitize data
+        $sanitizeClass = new Sanitize();
+        $sortField = $sanitizeClass->sanitizeStringOrNull($sortField);
+        $search = $sanitizeClass->sanitizeStringOrNull($search);
+        $ORDER_BY = $sanitizeClass->sanitizeStringOrNull($ORDER_BY);
+
         // Declare a variable to hold the result
         $get_animal_query = $animal->getanimals($sortField, $search, $ORDER_BY);
 
@@ -79,19 +85,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     //verifying required fields are given before db insert
     if (!empty($data['added_by_id']) && !empty($data['color_id']) && !empty($data['location_id'])) {
 
-        //prepare to insert data
+        //prepare/ sanitize info to insert data
+
+        $sanitizeClass = new Sanitize();
+        $blpa_number = $sanitizeClass->sanitizeIntegerOrNull($data['blpa_number']);
+        $color_id = $sanitizeClass->sanitizeIntegerOrNull($data['color_id']);
+        $sire_id = $sanitizeClass->sanitizeIntegerOrNull($data['sire_id']);
+        $dam_id = $sanitizeClass->sanitizeIntegerOrNull($data['dam_id']);
+        $dob = $sanitizeClass->sanitizeDateOrNull($data['dob']);
+        $gender = $sanitizeClass->sanitizeStringOrNull($data['gender']);
+        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull($data['added-by_id']);
+        
+        $location_id = $sanitizeClass->sanitizeIntegerOrNull($data['location_id']);
+        $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
+        $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
 
         $result = $animal->addAnimal(
-            $data['blpa_number'],
-            $data['color_id'],
-            $data['sire_id'],
-            $data['dam_id'],
-            $data['dob'],
-            $data['gender'],
-            $data['added_by_id'],
-            $data['image'],
-            $data['location_id'],
-            $data['weight']
+            $blpa_number,
+            $color_id,
+            $sire_id,
+            $dam_id,
+            $dob,
+            $gender,
+            $added_by_id,
+            $data['image'], //image is sanitized in image class
+            $location_id,
+            $weight,
+            $weight_memo
         );
         if ($result) {
             http_response_code(response_code: 201);

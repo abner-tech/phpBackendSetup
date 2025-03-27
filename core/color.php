@@ -2,8 +2,6 @@
 
 use PgSql\Result;
 
-require_once '../middleware/auth/token.php';
-
 class Color
 {
 
