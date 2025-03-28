@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $dam_id = $sanitizeClass->sanitizeIntegerOrNull($data['dam_id']);
         $dob = $sanitizeClass->sanitizeDateOrNull($data['dob']);
         $gender = $sanitizeClass->sanitizeStringOrNull($data['gender']);
-        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull($data['added-by_id']);
+        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull((int) $data['added_by_id']);
         
         $location_id = $sanitizeClass->sanitizeIntegerOrNull($data['location_id']);
         $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
@@ -114,8 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $weight_memo
         );
         if ($result) {
-            http_response_code(response_code: 201);
-            echo json_encode(value: ['message' => 'animal registered successfully', 'animal_id' => $result]);
+            echo json_encode(value: ['message' => $result]);
         }
     } else {
         http_response_code(response_code: 400);

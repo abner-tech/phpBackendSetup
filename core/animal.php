@@ -144,10 +144,12 @@ class animal
         $returnArray = [];
 
         //check if record inserted successfully
-        if ($animal_result_id) {
+        if ($animal_result_id ) {
             $animal_result_id = (int) pg_fetch_result(result: $animal_result_id, row: 0, field: 'id');
+            http_response_code(response_code: 201);
             $returnArray['animal_id'] = $animal_result_id;
         } else {
+            http_response_code(response_code: 500);
             $returnArray['error'] = $animal_result_id;
             return $returnArray;
         }
@@ -166,7 +168,7 @@ class animal
         //then validate and insert the image of the animal if given
         if ($image_Data !== '' && $image_Data !== null) {
             $imageClass = new Image($this->conn);
-            $image_result_id = $imageClass->InsertImage(null, $location_result_id, $image_Data);
+            $image_result_id = $imageClass->InsertImage(null, $location_result_id, null, $image_Data);
 
             if (is_string($image_result_id)) {
                 $returnArray['error'] = $image_result_id;
