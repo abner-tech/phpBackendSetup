@@ -3,12 +3,12 @@
 // Initialize API
 include_once '../core/initialize.php';
 
-// Instantiate the Location class
-$location = new Location(db: $dbconn);
+// Instantiate the needed classes
 $sanitizeClass = new Sanitize();
 $imageClass = new Image($dbconn);
+$weightClass = new Weight($dbconn);
 
-// Handle GET request to retrieve Locations
+// Handle GET request to retrieve animal_weight
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     //animal history requested
@@ -17,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $history = $sanitizeClass->sanitizeStringOrNull($_GET['history']);
 
         if ($animal_id > 0 && $history === "true") {
-            $result = $location->getAnimalMovementHistryByID($animal_id);
-            $movement_data = pg_fetch_all($result);
-            if ($movement_data) {
+            $result = $weightClass->getWeightHistoryByAnimalID($animal_id);
+            $weight_data = pg_fetch_all($result);
+            if ($weight_data) {
                 http_response_code(response_code: 200);
-                echo json_encode(["movements" => $movement_data]);
+                echo json_encode(["data" => $weight_data]);
             } else {
                 http_response_code(response_code: 404);
             }
@@ -31,23 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 
         // Declare a variable to hold the result
-        $get_location_query = $location->getLocations();
+        // $get_location_query = $location->getLocations();
 
-        if ($get_location_query) {
-            // Fetch data: All locations => `pg_fetch_all()`
-            $location_data = pg_fetch_all(result: $get_location_query);
+        // if ($get_location_query) {
+        //     // Fetch data: All locations => `pg_fetch_all()`
+        //     $location_data = pg_fetch_all(result: $get_location_query);
 
-            if ($location_data) {
-                http_response_code(response_code: 200);
-                echo json_encode(value: ['locations' => $location_data]);
-            } else {
-                http_response_code(response_code: 404);
-                echo json_encode(value: ['message' => 'requested resource not found']);
-            }
-        } else {
-            http_response_code(response_code: 500);
-            echo json_encode(value: ['message' => 'Server encountered an error and could not complete your request']);
-        }
+        //     if ($location_data) {
+        //         http_response_code(response_code: 200);
+        //         echo json_encode(value: ['locations' => $location_data]);
+        //     } else {
+        //         http_response_code(response_code: 404);
+        //         echo json_encode(value: ['message' => 'requested resource not found']);
+        //     }
+        // } else {
+        //     http_response_code(response_code: 500);
+        //     echo json_encode(value: ['message' => 'Server encountered an error and could not complete your request']);
+        // }
     }
     exit;
 }

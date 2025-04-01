@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $location_id = $sanitizeClass->sanitizeIntegerOrNull($data['location_id']);
         $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
-        $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
+        // $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
 
         $result = $animal->addAnimal(
             $blpa_number,
@@ -111,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['image'], //image is sanitized in image class
             $location_id,
             $weight,
-            $weight_memo
         );
         if ($result) {
             echo json_encode(value: ['message' => $result]);

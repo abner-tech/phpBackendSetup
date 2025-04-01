@@ -100,7 +100,7 @@ class Location
             INNER JOIN users AS u ON u.id = prev_lm.added_by_id
             )
         SELECT 
-            sq.id, 
+            DISTINCT sq.id, 
             sq.animal_id, 
             sq.old_location_move_id, 
             sq.farm_name, sq.address, 
@@ -117,9 +117,6 @@ class Location
 
     }
 
-    public function addAnimalMovement($animal_id, $new_location_id, $old_location_move_id, $added_by_id) {
-
-    }
 }
 
 ?>

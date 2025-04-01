@@ -111,7 +111,7 @@ class animal
         $image_Data,
         $location_id,
         $weight,
-        $weight_memo
+
     ) {
 
         //insert animal info first
@@ -183,7 +183,8 @@ class animal
             $weight_result_id = $weightClass->createWeight(
                 $animal_result_id,
                 $weight,
-                $weight_memo
+                null,
+                $added_by_id
             );
 
             if( !is_int($weight_result_id) && is_string($weight_result_id)) {
