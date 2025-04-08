@@ -23,7 +23,7 @@ class Weight
     }
 
 
-    public function createWeight($animal_id, $weight, $memo): bool|string|null
+    public function createWeight($animal_id, $weight, $memo)
     {
         $query = '
             INSERT INTO weight_log
@@ -33,7 +33,8 @@ class Weight
         $result = pg_query_params(connection: $this->conn, query: $query, params: [$animal_id, $weight, $memo]);
 
         if ($result) {
-            return pg_fetch_result(result: $result, row: 0, field: 'id');
+            $id = (int) pg_fetch_result(result: $result, row: 0, field: 'id');
+            return $id;
         } else {
             return false;
         }

@@ -18,7 +18,7 @@ class Location
     //gettting user from database
     public function getLocations(): bool|Result
     {
-        $query = 'SELECT id, farm_name FROM location';
+        $query = 'SELECT id, location_name AS farm_name FROM location';
         pg_prepare($this->conn, "get_locations", query: $query);
         $stmt = pg_execute($this->conn, "get_locations", params: []);
         return $stmt;
@@ -29,28 +29,28 @@ class Location
     {
         $query = '
             INSERT INTO location
-            (farm_name, location)
+            (location_name, location_address)
             VALUES ($1, $2)
             RETURNING id';
         $result = pg_query_params(connection: $this->conn, query: $query, params: [$farm_name, $location]);
 
         if ($result) {
-            return pg_fetch_result(result: $result, row: 0, field: 'id');
+            return (int) pg_fetch_result(result: $result, row: 0, field: 'id');
         } else {
             return false;
         }
     }
 
-    public function InsertAnimalLocation($animal_id, $new_farm_id, $old_location_move_id, $added_by_id) {
+    public function InsertAnimalLocation_NO_transactional_sql($animal_id, $new_location_name, $old_location_move_name, $added_by_id) {
         $query = '
         INSERT INTO location_move
-        (animal_id, new_farm_id, old_location_move_id, added_by_id)
+        (animal_id, new_location_name, old_location_name, added_by_id)
         VALUES ( $1, $2, $3, $4)
-        RETURNING id
+        RETURNING id;
         ';
 
         $location_result_id = pg_query_params($this->conn, $query, [
-            $animal_id, $new_farm_id, $old_location_move_id, $added_by_id
+            $animal_id, $new_location_name, $old_location_move_name, $added_by_id
         ]);
 
         if ($location_result_id) {
