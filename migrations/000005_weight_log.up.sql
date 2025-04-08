@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS weight_log (
     weight BIGINT NOT NULL,
     memo CHARACTER VARYING,
     image_id INT REFERENCES image(id) ON DELETE CASCADE,
+    added_by INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_timestamp timestamp(0)
     WITH
         TIME ZONE NOT NULL DEFAULT NOW()

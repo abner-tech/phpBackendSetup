@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['animal_id'])) {
 
     $image_data = pg_fetch_all(result: $result);
     http_response_code(response_code: 200);
-    echo json_encode(value: $image_data);
+    echo json_encode(["data" => $image_data] );
 
     exit;
 }
