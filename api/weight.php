@@ -26,29 +26,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 http_response_code(response_code: 404);
             }
         }
-    } else {
-        //just locations requested
-
-
-        // Declare a variable to hold the result
-        // $get_location_query = $location->getLocations();
-
-        // if ($get_location_query) {
-        //     // Fetch data: All locations => `pg_fetch_all()`
-        //     $location_data = pg_fetch_all(result: $get_location_query);
-
-        //     if ($location_data) {
-        //         http_response_code(response_code: 200);
-        //         echo json_encode(value: ['locations' => $location_data]);
-        //     } else {
-        //         http_response_code(response_code: 404);
-        //         echo json_encode(value: ['message' => 'requested resource not found']);
-        //     }
-        // } else {
-        //     http_response_code(response_code: 500);
-        //     echo json_encode(value: ['message' => 'Server encountered an error and could not complete your request']);
-        // }
     }
+    // else {
+    //just locations requested
+
+
+    // Declare a variable to hold the result
+    // $get_location_query = $location->getLocations();
+
+    // if ($get_location_query) {
+    //     // Fetch data: All locations => `pg_fetch_all()`
+    //     $location_data = pg_fetch_all(result: $get_location_query);
+
+    //     if ($location_data) {
+    //         http_response_code(response_code: 200);
+    //         echo json_encode(value: ['locations' => $location_data]);
+    //     } else {
+    //         http_response_code(response_code: 404);
+    //         echo json_encode(value: ['message' => 'requested resource not found']);
+    //     }
+    // } else {
+    //     http_response_code(response_code: 500);
+    //     echo json_encode(value: ['message' => 'Server encountered an error and could not complete your request']);
+    // }
+    // }
     exit;
 }
 
@@ -57,16 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_GET['new_animal_history']) && $_GET['new_animal_history'] === 'true') {
         $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
-        //data validation
-
+        //data validation and sanitiatin
         $animal_id = isset($data['animal_id']) ?
             $sanitizeClass->sanitizeIntegerOrNull($data['animal_id']) : null;
-        $new_location_id = isset($data['location_id']) ?
-            $sanitizeClass->sanitizeIntegerOrNull($data['location_id']) : null;
-        $old_movement_id = isset($data['old_movement_id']) ?
-            $sanitizeClass->sanitizeIntegerOrNull($data['old_movement_id']) : null;
-        $recorded_by_id = isset($data['recorded_by']) ?
-            $sanitizeClass->sanitizeIntegerOrNull($data['recorded_by']) : null;
+        $new_weight = isset($data['weight']) ?
+            $sanitizeClass->sanitizeIntegerOrNull($data['weight']) : null;
+        $old_weight = isset($data['old_weight']) ?
+            $sanitizeClass->sanitizeIntegerOrNull($data['old_weight']) : null;
+        $recorded_by_id = isset($data['recorded_by_id']) ?
+            $sanitizeClass->sanitizeIntegerOrNull($data['recorded_by_id']) : null;
+        $memo = isset($data['memo']) ?
+            $sanitizeClass->sanitizeStringOrNull($data['memo']) : null;
         $image_data = isset($data['image_data']) ?
             $data['image_data'] : null;
 
@@ -74,47 +76,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result;
         $image_result;
 
-        if ($animal_id && $new_location_id && $old_movement_id && $recorded_by_id) {
-            $result = $location->InsertAnimalLocation(
+        //enter animal record
+        if ($animal_id && $new_weight && $recorded_by_id) {
+            $result = $weightClass->createWeight(
                 $animal_id,
-                $new_location_id,
-                $old_movement_id,
-                $recorded_by_id
+                $new_weight,
+                $memo,
+                $added_by_id
             );
-
         }
 
-        if ($result && $image_data !== null) {
+        if ($result && $image_data !== null && is_int($result)) {
             $image_result = $imageClass->InsertImage(
-                null,
                 $result,
+                null,
                 $animal_id,
                 $image_data
             );
         }
 
-        if (is_int($result) && $image_data !== null && is_int($result)) {
+        if (is_int($result) && $image_data !== null && is_int($image_result)) {
             http_response_code(201);
             echo json_encode([
-                'message' => 'new animal movement created',
+                'message' => 'New animal weight saved with image.',
                 'info' => [
-                    'location_id' => $result,
+                    'weight_id' => $result,
                     'image_id' => $image_result
                 ]
             ]);
         } else if (is_int($result) && $image_data === null) {
             http_response_code(201);
             echo json_encode([
-                'message' => 'new animal movement created',
+                'message' => 'New animal weight saved without image.',
                 'info' => [
-                    'location_id' => $result,
+                    'weight_id' => $result,
+                ]
+            ]);
+        } else if (is_int($result) && $image_data && is_string($image_result)) {
+            http_response_code(207); // Multi-Status
+            echo json_encode([
+                'message' => 'New animal weight saved, but image upload failed.',
+                'errors' => [
+                    'image' => $image_result
+                ],
+                'info' => [
+                    'weight_id' => $result,
                 ]
             ]);
         } else {
             http_response_code(500);
             echo json_encode([
-                'message' => 'server encountered an error and clould not process your request'
+                'message' => 'Server encountered an error and could not process your request.'
             ]);
+            // Log the error for debugging
+            error_log("Server error: weight save failed. result: " . print_r($result, true) . ", image_result: " . print_r($image_result, true));
         }
     } else {
         // Get the JSON input

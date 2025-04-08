@@ -59,7 +59,6 @@ class Weight
         return( pg_query_params(connection: $this->conn, query: $query, params: [$animal_id]));
     }
 
-
     //add new weight log for an animal
     public function createWeight($animal_id, $weight, $memo, $userID): bool|string|null
     {

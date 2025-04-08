@@ -96,25 +96,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_int($result) && $image_data !== null && is_int($result)) {
             http_response_code(201);
             echo json_encode([
-                'message' => 'new animal movement created',
+                'message' => 'new animal movement saved',
                 'info' => [
-                    'location_id' => $result,
+                    'movement_id' => $result,
                     'image_id' => $image_result
                 ]
             ]);
         } else if (is_int($result) && $image_data === null) {
             http_response_code(201);
             echo json_encode([
-                'message' => 'new animal movement created',
+                'message' => 'new animal movement saved',
                 'info' => [
-                    'location_id' => $result,
+                    'movement_id' => $result,
+                ]
+            ]);
+        } else if (is_int($result) && $image_data && is_string($image_result)) {
+            http_response_code(207); // Multi-Status
+            echo json_encode([
+                'message' => 'New animal movement saved, but image upload failed.',
+                'errors' => [
+                    'image' => $image_result
+                ],
+                'info' => [
+                    'movement_id' => $result,
                 ]
             ]);
         } else {
             http_response_code(500);
             echo json_encode([
-                'message' => 'server encountered an error and clould not process your request'
+                'message' => 'server encountered an error and could not process your request'
             ]);
+            // Log the error for debugging
+            error_log("Server error: movement save failed. result: " . print_r($result, true) . ", image_result: " . print_r($image_result, true));
         }
     } else {
         // Get the JSON input
