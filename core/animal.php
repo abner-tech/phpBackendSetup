@@ -172,7 +172,8 @@ class animal
                 $weight_result_id = $weightClass->createWeight(
                     $animal_id,
                     $weight,
-                    $weight_memo
+                    null,
+                    $added_by_id
                 );
 
                 if (!is_int($weight_result_id) && !empty($weight_result_id)) {

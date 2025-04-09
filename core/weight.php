@@ -23,7 +23,7 @@ class Weight
     }
 
 
-    public function createWeight($animal_id, $weight, $memo)
+    public function createWeight($animal_id, $weight, $memo, $userID)
     {
         $query = '
             INSERT INTO weight_log
