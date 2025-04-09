@@ -7,6 +7,8 @@ include_once '../core/initialize.php';
 $location = new Location(db: $dbconn);
 $sanitizeClass = new Sanitize();
 $imageClass = new Image($dbconn);
+$sanitizeClass = new Sanitize();
+$imageClass = new Image($dbconn);
 
 // Handle GET request to retrieve Locations
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -17,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $history = $sanitizeClass->sanitizeStringOrNull($_GET['history']);
 
         if ($animal_id > 0 && $history === "true") {
-            $result = $location->getAnimalMovementHistryByID($animal_id);
+            $result = $location->getAnimalMovementHistryByID_NO_transactinal_sql($animal_id);
             $movement_data = pg_fetch_all($result);
             if ($movement_data) {
                 http_response_code(response_code: 200);
@@ -54,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // Handle POST request to add a new location
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     if (isset($_GET['new_animal_history']) && $_GET['new_animal_history'] === 'true') {
         $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
@@ -61,33 +64,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $animal_id = isset($data['animal_id']) ?
             $sanitizeClass->sanitizeIntegerOrNull($data['animal_id']) : null;
-        $new_location_id = isset($data['location_id']) ?
+        $new_location_name = isset($data['new_location_name']) ?
             $sanitizeClass->sanitizeIntegerOrNull($data['location_id']) : null;
-        $old_movement_id = isset($data['old_movement_id']) ?
+        $old_movement_name = isset($data['old_location_name']) ?
             $sanitizeClass->sanitizeIntegerOrNull($data['old_movement_id']) : null;
-        $recorded_by_id = isset($data['recorded_by']) ?
-            $sanitizeClass->sanitizeIntegerOrNull($data['recorded_by']) : null;
+        $recorded_by_id = isset($data['added_by_id']) ?
+            $sanitizeClass->sanitizeIntegerOrNull($data['added_by_id']) : null;
         $image_data = isset($data['image_data']) ?
             $data['image_data'] : null;
+        $weight = isset($data['weight']) ?
+        $sanitizeClass->sanitizeIntegerOrNull($data['weight']) : null;
 
 
         $result;
         $image_result;
 
-        if ($animal_id && $new_location_id && $old_movement_id && $recorded_by_id) {
-            $result = $location->InsertAnimalLocation(
+        if ($animal_id && $new_location_name && $old_movement_name && $recorded_by_id) {
+            $result = $location->InsertAnimalLocation_transactional_sql(
                 $animal_id,
-                $new_location_id,
-                $old_movement_id,
-                $recorded_by_id
+                $new_location_name,
+                $location_name,
+                $recorded_by_id, $weight, $image
             );
 
         }
 
         if ($result && $image_data !== null) {
-            $image_result = $imageClass->InsertImage(
-                null,
-                $result,
+            $image_result = $imageClass->InsertImage_NO_transactional_sql(
                 $animal_id,
                 $image_data
             );

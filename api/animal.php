@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
     //verifying required fields are given before db insert
-    if (!empty($data['added_by_id']) && !empty($data['color_id']) && !empty($data['location_id'])) {
+    if (!empty($data['added_by_id']) && !empty($data['color_id']) && !empty($data['location'])) {
 
         //prepare/ sanitize info to insert data
 
@@ -94,10 +94,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $dam_id = $sanitizeClass->sanitizeIntegerOrNull($data['dam_id']);
         $dob = $sanitizeClass->sanitizeDateOrNull($data['dob']);
         $gender = $sanitizeClass->sanitizeStringOrNull($data['gender']);
-        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull((int) $data['added_by_id']);
+        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull($data['added_by_id']);
         
-        $location_id = $sanitizeClass->sanitizeIntegerOrNull($data['location_id']);
+        $location = $sanitizeClass->sanitizeStringOrNull($data['location']);
         $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
+        // $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
         // $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
 
         $result = $animal->addAnimal(
@@ -109,15 +110,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $gender,
             $added_by_id,
             $data['image'], //image is sanitized in image class
-            $location_id,
+            $location,
             $weight,
+            null
         );
-        if ($result) {
+        if (is_string($result)) {
+            http_response_code(response_code: 201);
             echo json_encode(value: ['message' => $result]);
+        } else {
+            http_response_code(response_code:500);
+            echo json_encode(["error" => $result['error']]);
         }
     } else {
         http_response_code(response_code: 400);
-        echo json_encode(value: ['message' => 'Invalid input']);
+        echo json_encode(value: ['error' => 'Invalid input']);
     }
     exit;
 }
