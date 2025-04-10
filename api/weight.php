@@ -27,29 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
     }
-    // else {
-    //just locations requested
-
-
-    // Declare a variable to hold the result
-    // $get_location_query = $location->getLocations();
-
-    // if ($get_location_query) {
-    //     // Fetch data: All locations => `pg_fetch_all()`
-    //     $location_data = pg_fetch_all(result: $get_location_query);
-
-    //     if ($location_data) {
-    //         http_response_code(response_code: 200);
-    //         echo json_encode(value: ['locations' => $location_data]);
-    //     } else {
-    //         http_response_code(response_code: 404);
-    //         echo json_encode(value: ['message' => 'requested resource not found']);
-    //     }
-    // } else {
-    //     http_response_code(response_code: 500);
-    //     echo json_encode(value: ['message' => 'Server encountered an error and could not complete your request']);
-    // }
-    // }
     exit;
 }
 
@@ -72,65 +49,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $image_data = isset($data['image_data']) ?
             $data['image_data'] : null;
 
-
         $result;
         $image_result;
 
         //enter animal record
         if ($animal_id && $new_weight && $recorded_by_id) {
-            $result = $weightClass->createWeight(
+            $result = $weightClass->createWeight_Transactional_sql(
                 $animal_id,
                 $new_weight,
                 $memo,
-                $added_by_id
-            );
-        }
-
-        if ($result && $image_data !== null && is_int($result)) {
-            $image_result = $imageClass->InsertImage(
-                $result,
-                null,
-                $animal_id,
+                $added_by_id,
                 $image_data
             );
         }
 
-        if (is_int($result) && $image_data !== null && is_int($image_result)) {
+        if (is_int($result)) {
             http_response_code(201);
-            echo json_encode([
-                'message' => 'New animal weight saved with image.',
-                'info' => [
-                    'weight_id' => $result,
-                    'image_id' => $image_result
-                ]
-            ]);
-        } else if (is_int($result) && $image_data === null) {
-            http_response_code(201);
-            echo json_encode([
-                'message' => 'New animal weight saved without image.',
-                'info' => [
-                    'weight_id' => $result,
-                ]
-            ]);
-        } else if (is_int($result) && $image_data && is_string($image_result)) {
-            http_response_code(207); // Multi-Status
-            echo json_encode([
-                'message' => 'New animal weight saved, but image upload failed.',
-                'errors' => [
-                    'image' => $image_result
-                ],
-                'info' => [
-                    'weight_id' => $result,
-                ]
-            ]);
+            echo json_encode(["message" => "successfully added aninal weight log with id " . $result]);
         } else {
             http_response_code(500);
             echo json_encode([
-                'message' => 'Server encountered an error and could not process your request.'
+                "status_message" => 'server encountered an error and could not process your request',
+                "error" => $result,
             ]);
-            // Log the error for debugging
-            error_log("Server error: weight save failed. result: " . print_r($result, true) . ", image_result: " . print_r($image_result, true));
         }
+
     } else {
         // Get the JSON input
         $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);

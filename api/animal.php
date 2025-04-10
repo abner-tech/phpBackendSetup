@@ -9,7 +9,7 @@ $animal = new animal(db: $dbconn);
 // Handle GET request to retrieve all or one animal
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    
+
     if (isset($_GET['search_id'])) { //fwetching for a list to select
         $search = $_GET['search_id'];
         $sex = $_GET['sex'];
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else {
         //all animals fetched
         $sortField = isset($_GET['sortedField']) ? $_GET['sortedField'] : '';
-        $search= isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
+        $search = isset($_GET['filteredTerm']) ? $_GET['filteredTerm'] : '';
         $ORDER_BY = isset($_GET['order']) ? $_GET['order'] : '';
 
         //sanitize data
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $dob = $sanitizeClass->sanitizeDateOrNull($data['dob']);
         $gender = $sanitizeClass->sanitizeStringOrNull($data['gender']);
         $added_by_id = $sanitizeClass->sanitizeIntegerOrNull($data['added_by_id']);
-        
+
         $location = $sanitizeClass->sanitizeStringOrNull($data['location']);
         $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
         // $weight_memo = $sanitizeClass->sanitizeStringOrNull($data['weight_memo']);
@@ -115,10 +115,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         if (is_string($result)) {
             http_response_code(response_code: 201);
-            echo json_encode(value: ['message' => $result]);
+            echo json_encode(value: ['message' => 'successfully added animal with id: ' . $result]);
         } else {
-            http_response_code(response_code:500);
-            echo json_encode(["error" => $result['error']]);
+            http_response_code(response_code: 500);
+            echo json_encode([
+                'status_message' => 'Server encountered an error and could not process your request',
+                "error" => $result['error']
+            ]);
         }
     } else {
         http_response_code(response_code: 400);

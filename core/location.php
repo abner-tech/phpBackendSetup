@@ -114,7 +114,7 @@ class Location
         }
     }
 
-    public function InsertAnimalLocation_transactional_sql(
+    public function insertAnimalLocation_transactional_sql(
         $animal_id,
         $new_location_name,
         $old_location_move_name,
@@ -122,53 +122,76 @@ class Location
         $weight,
         $image
     ) {
+
+
         try {
             pg_query($this->conn, "BEGIN");
-
+    
             // 1. Insert image if provided
             $image_id = null;
-            if (!empty($image_Data)) {
+            if (!empty($image)) {
                 $imageClass = new Image($this->conn);
-                $image_result_id = $imageClass->InsertImage_No_transactional_sql(null, $image_Data);
+                $image_result_id = $imageClass->InsertImage_No_transactional_sql($animal_id, $image);
+    
                 if (is_string($image_result_id)) {
                     throw new Exception("Image insert error: " . $image_result_id);
                 }
-
+    
                 $image_id = $image_result_id;
             }
-
+    
+            // 2. Insert weight if provided
+            $weight_id = null;
+            if (!empty($weight)) {
+                $weightClass = new Weight($this->conn);
+                $weight_result_id = $weightClass->createWeight(
+                    $animal_id,
+                    $weight,
+                    null,
+                    $added_by_id, 
+                    $image_id
+                );
+    
+                if (!is_int($weight_result_id)) {
+                    throw new Exception("Weight insert error: " . $weight_result_id);
+                }
+    
+                $weight_id = $weight_result_id;
+            }
+    
+            // 3. Insert location move
             $query = '
                 INSERT INTO location_move (
-                    animal_id, new_location_name, old_location_name, added_by_id, weight_id
-                ) VALUES ($1, $2, $3, $4, $5)
+                    animal_id, new_location_name, old_location_name, added_by_id, weight_id, image_id
+                ) VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id;
             ';
-
+    
             $location_result = pg_query_params($this->conn, $query, [
                 $animal_id,
                 $new_location_name,
                 $old_location_move_name,
                 $added_by_id,
-                $weight
+                $weight_id,
+                $image_id
             ]);
-
+    
             if (!$location_result) {
-                throw new Exception("Failed to insert location move.");
+                throw new Exception("Failed to insert location move");
             }
-
+    
             $id = (int) pg_fetch_result($location_result, 0, 'id');
-
-            // Commit the transaction
+    
             pg_query($this->conn, "COMMIT");
-
+    
             return $id;
-
+    
         } catch (Exception $e) {
-            // Rollback the transaction on error
             pg_query($this->conn, "ROLLBACK");
             return 'Error inserting location: ' . $e->getMessage();
         }
     }
+    
 
 
 }

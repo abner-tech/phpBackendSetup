@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['animal_id'])) {
 
     $image_data = pg_fetch_all(result: $result);
     http_response_code(response_code: 200);
-    echo json_encode(["data" => $image_data] );
+    echo json_encode(["data" => $image_data]);
 
     exit;
 }
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
     if (
         isset($data['image_data']) &&
-        (isset($data['animal_id']) || isset($data['weight_id']) || isset($data['move_id']))
+        (isset($data['animal_id']))
     ) {
         // Get the JSON input values
         $animal_id = (int) isset($data['animal_id']) ?
@@ -53,13 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $image_data = $sanitizeClass->sanitizeStringOrNull($data['image_data']);
 
         // handle insert of new image
-        $result = $image->InsertImage($weight_id, $location_move_id, $animal_id, $image_data);
-        if ($result) {
+        $result = $image->InsertImage($animal_id, $image_data);
+        if (is_int($result)) {
             http_response_code(201);
-            echo (json_encode(["message" => "image uploaded successfully"]));
+            echo (json_encode(["message" => "successfully added image with id " . $result]));
         } else {
             http_response_code(500);
-            echo (json_encode(["error" => "server encountered an error and could not complete the request"]));
+            echo (json_encode([
+                "status_message" => "server encountered an error and could not complete the request",
+                "error" => $result
+            ]));
         }
     } else {
         http_response_code(500);

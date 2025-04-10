@@ -158,7 +158,8 @@ class animal
                 $animal_id,
                 $location,
                 null,
-                $added_by_id, null
+                $added_by_id,
+                null
             );
 
             if (!is_int($location_result_id)) {
@@ -173,7 +174,8 @@ class animal
                     $animal_id,
                     $weight,
                     null,
-                    $added_by_id
+                    $added_by_id,
+                    $image_id
                 );
 
                 if (!is_int($weight_result_id) && !empty($weight_result_id)) {
@@ -207,13 +209,12 @@ class animal
 
             // 7. All went well: commit
             pg_query($this->conn, "COMMIT");
-            return 'successfully added animal with id: ' . $animal_id;
+            return $animal_id;
 
         } catch (Exception $e) {
             // If any error happens, rollback everything
             pg_query($this->conn, "ROLLBACK");
-            $returnArray['error'] = $e->getMessage();
-            return $returnArray;
+            return $e->getMessage();
         }
     }
 

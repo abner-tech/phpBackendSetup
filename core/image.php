@@ -18,57 +18,63 @@ class Image
     {
     }
 
+    // transactional sql
     public function InsertImage($animal_id, $image_Data)
     {
-        //validation of image is done before insert
-        if (
-            !is_string($image_Data) ||
-            !preg_match('/^data:image\/(png|jpeg|gif);base64,/', $image_Data)
-        ) {
-            return 'invalid image data format';
-        }
-
-
-        //decode base64 image string
-        $base64_str = preg_replace('#^data:image/\w+;base64,#i', '', $image_Data);
-        $decoded_image_Data = base64_decode($base64_str);
-        if ($decoded_image_Data === false) {
-            return 'failed to decode base64 image data';
-        }
-
-        $query = ' 
-            INSERT INTO image (animal_id, image_data)
-            VALUES ($1, $2)
-            RETURNING id;
-        ';
-
-        pg_query($this->conn, 'BEGIN;');
-
-        $image_result_id = pg_query_params($this->conn, $query, [
-            $animal_id,
-            $image_Data,
-        ]);
-
-        //check if record inserted successfully
-        if ($image_result_id) {
-            $image_result_id = (int) pg_fetch_result(result: $image_result_id, row: 0, field: 'id');
-
-            if (is_int($image_result_id)) {
-                pg_query($this->conn, 'COMMIT;');
-                pg_query($this->conn, 'END;');
-            } else {
-                pg_query($this->conn, 'ROLLBACK;');
-                pg_query($this->conn, 'END;');
+        try {
+            // 1. Validate image format
+            if (
+                !is_string($image_Data) ||
+                !preg_match('/^data:image\/(png|jpeg|gif);base64,/', $image_Data)
+            ) {
+                throw new Exception('Invalid image data format');
             }
-            return $image_result_id;
-        } else {
+    
+            // 2. Decode base64 string
+            $base64_str = preg_replace('#^data:image/\w+;base64,#i', '', $image_Data);
+            $decoded_image_Data = base64_decode($base64_str);
+            if ($decoded_image_Data === false) {
+                throw new Exception('Failed to decode base64 image data');
+            }
+    
+            // 3. Start transaction
+            pg_query($this->conn, 'BEGIN;');
+    
+            // 4. Insert into DB
+            $query = '
+                INSERT INTO image (animal_id, image_data)
+                VALUES ($1, $2)
+                RETURNING id;
+            ';
+    
+            $image_result = pg_query_params($this->conn, $query, [
+                $animal_id,
+                $image_Data
+            ]);
+    
+            if (!$image_result) {
+                throw new Exception('Failed to insert image into the database');
+            }
+    
+            $image_id = (int) pg_fetch_result($image_result, 0, 'id');
+    
+            if (!is_int($image_id)) {
+                throw new Exception('Invalid image ID returned from database');
+            }
+    
+            // 5. Commit and return ID
+            pg_query($this->conn, 'COMMIT;');
+            return $image_id;
+    
+        } catch (Exception $e) {
+            // Rollback on failure
             pg_query($this->conn, 'ROLLBACK;');
-            pg_query($this->conn, 'END;');
-            return 'error inserting animal image';
+            return 'Image insert error: ' . $e->getMessage();
         }
-
     }
+    
 
+    // no transactional sql
     public function InsertImage_NO_transactional_sql($animal_id, $image_Data)
     {
         // Validate base64 format
