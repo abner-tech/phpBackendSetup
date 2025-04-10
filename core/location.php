@@ -50,7 +50,7 @@ class Location
     ) {
         $query = '
         INSERT INTO location_move
-        (animal_id, new_location_name, old_location_name, added_by_id, weight)
+        (animal_id, new_location_name, old_location_name, added_by_id, weight_id)
         VALUES ( $1, $2, $3, $4, $5)
         RETURNING id;
         ';

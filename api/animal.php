@@ -111,8 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $added_by_id,
             $data['image'], //image is sanitized in image class
             $location,
-            $weight,
-            null
+            $weight
         );
         if (is_string($result)) {
             http_response_code(response_code: 201);

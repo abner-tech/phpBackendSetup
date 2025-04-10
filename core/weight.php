@@ -27,7 +27,7 @@ class Weight
     {
         $query = '
             INSERT INTO weight_log
-            (animal_id, weight, memo, added_by_id)
+            (animal_id, weight, memo, added_by)
             VALUES ($1, $2, $3, $4)
             RETURNING id';
         $result = pg_query_params(connection: $this->conn, query: $query, params: [$animal_id, $weight, $memo, $userID]);
