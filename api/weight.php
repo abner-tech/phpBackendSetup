@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $animal_id,
                 $new_weight,
                 $memo,
-                $added_by_id,
+                $recorded_by_id,
                 $image_data
             );
         }

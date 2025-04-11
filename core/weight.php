@@ -18,6 +18,7 @@ class Weight
     {
         $query = '
         SELECT 
+            wl.id,
 	        wl.animal_id, 
 	        wl.created_timestamp, 
 	        wl.weight, CONCAT (u.firstname, \' \', u.lastname) AS recorded_by, 

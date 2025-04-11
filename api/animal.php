@@ -113,14 +113,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $location,
             $weight
         );
-        if (is_string($result)) {
+        if (is_int($result)) {
             http_response_code(response_code: 201);
             echo json_encode(value: ['message' => 'successfully added animal with id: ' . $result]);
         } else {
             http_response_code(response_code: 500);
             echo json_encode([
                 'status_message' => 'Server encountered an error and could not process your request',
-                "error" => $result['error']
+                "error" => $result
             ]);
         }
     } else {
