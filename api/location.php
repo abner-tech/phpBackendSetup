@@ -3,11 +3,10 @@
 // Initialize API
 include_once '../core/initialize.php';
 
-// Instantiate the Location class
+// Instantiate the classes used
 $location = new Location(db: $dbconn);
 $sanitizeClass = new Sanitize();
 $imageClass = new Image($dbconn);
-$sanitizeClass = new Sanitize();
 $imageClass = new Image($dbconn);
 
 // Handle GET request to retrieve Locations
@@ -26,6 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 echo json_encode(["movements" => $movement_data]);
             } else {
                 http_response_code(response_code: 404);
+            }
+        }
+    } else if (isset($_GET['summary'])) {  //farms summary requested
+        $summary = $sanitizeClass->sanitizeStringOrNull($_GET['summary']);
+        if ($summary) {
+            $result = $location->locationsSummary();
+            if ($result && is_array(pg_fetch_all($result))) {
+                $movement_data = pg_fetch_all($result);
+                    http_response_code(response_code: 200);
+                    echo json_encode($movement_data);
+            } else {
+                http_response_code(response_code: 404);
+                echo json_encode(value: [
+                    'status_message' => 'server encountered an error and could not process your request',
+                    "error" => $summary
+                ]);
             }
         }
     } else {

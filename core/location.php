@@ -126,20 +126,20 @@ class Location
 
         try {
             pg_query($this->conn, "BEGIN");
-    
+
             // 1. Insert image if provided
             $image_id = null;
             if (!empty($image)) {
                 $imageClass = new Image($this->conn);
                 $image_result_id = $imageClass->InsertImage_No_transactional_sql($animal_id, $image);
-    
+
                 if (is_string($image_result_id)) {
                     throw new Exception("Image insert error: " . $image_result_id);
                 }
-    
+
                 $image_id = $image_result_id;
             }
-    
+
             // 2. Insert weight if provided
             $weight_id = null;
             if (!empty($weight)) {
@@ -148,17 +148,17 @@ class Location
                     $animal_id,
                     $weight,
                     null,
-                    $added_by_id, 
+                    $added_by_id,
                     $image_id
                 );
-    
+
                 if (!is_int($weight_result_id)) {
                     throw new Exception("Weight insert error: " . $weight_result_id);
                 }
-    
+
                 $weight_id = $weight_result_id;
             }
-    
+
             // 3. Insert location move
             $query = '
                 INSERT INTO location_move (
@@ -166,7 +166,7 @@ class Location
                 ) VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id;
             ';
-    
+
             $location_result = pg_query_params($this->conn, $query, [
                 $animal_id,
                 $new_location_name,
@@ -175,23 +175,49 @@ class Location
                 $weight_id,
                 $image_id
             ]);
-    
+
             if (!$location_result) {
                 throw new Exception("Failed to insert location move");
             }
-    
+
             $id = (int) pg_fetch_result($location_result, 0, 'id');
-    
+
             pg_query($this->conn, "COMMIT");
-    
+
             return $id;
-    
+
         } catch (Exception $e) {
             pg_query($this->conn, "ROLLBACK");
             return 'Error inserting location: ' . $e->getMessage();
         }
     }
-    
+
+
+    public function locationsSummary()
+    {
+        $query = '
+        SELECT
+    	    l.id,
+          	l.location_name,
+  	        l.location_address,
+          	COUNT(DISTINCT lm.animal_id) AS animal_count,
+  	        l.created_timestamp
+        FROM location_move AS lm
+        INNER JOIN (
+  	        SELECT
+        	    animal_id,
+            	MAX(created_timestamp) AS latest_move
+  	        FROM location_move
+          	GROUP BY animal_id
+        ) AS latest ON lm.animal_id = latest.animal_id AND lm.created_timestamp = latest.latest_move
+        INNER JOIN location AS l ON l.location_name = lm.new_location_name
+        GROUP BY l.id, l.location_name, l.location_address,   l.created_timestamp
+        ORDER BY animal_count DESC
+        ';
+
+        $stmt = pg_query($this->conn, $query);
+        return $stmt;
+    }
 
 
 }
