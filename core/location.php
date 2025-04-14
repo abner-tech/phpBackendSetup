@@ -18,21 +18,32 @@ class Location
     //gettting user from database
     public function getLocations(): bool|Result
     {
-        $query = 'SELECT id, location_name AS farm_name FROM location';
+        $query = 'SELECT id, farm_name FROM location';
         pg_prepare($this->conn, "get_locations", query: $query);
         $stmt = pg_execute($this->conn, "get_locations", params: []);
         return $stmt;
     }
 
 
-    public function createLocation($farm_name, $location): bool|string|null
-    {
+    public function createLocation(
+        $farm_name,
+        $city,
+        $district,
+        $street_address,
+        $notes
+    ): bool|string|null {
         $query = '
             INSERT INTO location
-            (location_name, location_address)
-            VALUES ($1, $2)
+            (farm_name, street_address, city, district, notes)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id';
-        $result = pg_query_params(connection: $this->conn, query: $query, params: [$farm_name, $location]);
+        $result = pg_query_params(connection: $this->conn, query: $query, params: [
+            $farm_name,
+            $street_address,
+            $city,
+            $district,
+            $notes
+        ]);
 
         if ($result) {
             return (int) pg_fetch_result(result: $result, row: 0, field: 'id');
@@ -75,11 +86,11 @@ class Location
     {
         $query = '
         SELECT 
-			lm.id, lm.new_location_name,lm.old_location_name, l.location_address AS to_address,
+			lm.id, lm.new_location_name,lm.old_location_name, CONCAT (l.street_address, \' \', l.city , \' \', l.district) AS to_address,
 			 encode (i.image_data, \'escape\') AS image_data, lm.created_timestamp, CONCAT (u.firstname, \' \', u.lastname) AS recorded_by,
 			wl.weight
 		FROM location_move AS lm
-		LEFT JOIN location AS l ON l.location_name = lm.new_location_name
+		LEFT JOIN location AS l ON l.farm_name = lm.new_location_name
 		INNER JOIN users AS u ON u.id = lm.added_by_id
 		LEFT JOIN weight_log AS wl ON wl.id = lm.weight_id
 		LEFT JOIN image AS i ON lm.image_id = i.id
@@ -196,23 +207,28 @@ class Location
     public function locationsSummary()
     {
         $query = '
-        SELECT
-    	    l.id,
-          	l.location_name,
-  	        l.location_address,
-          	COUNT(DISTINCT lm.animal_id) AS animal_count,
-  	        l.created_timestamp
-        FROM location_move AS lm
-        INNER JOIN (
-  	        SELECT
-        	    animal_id,
-            	MAX(created_timestamp) AS latest_move
-  	        FROM location_move
-          	GROUP BY animal_id
-        ) AS latest ON lm.animal_id = latest.animal_id AND lm.created_timestamp = latest.latest_move
-        INNER JOIN location AS l ON l.location_name = lm.new_location_name
-        GROUP BY l.id, l.location_name, l.location_address,   l.created_timestamp
-        ORDER BY animal_count DESC
+		SELECT
+    		l.id,
+    		l.farm_name,
+    		l.street_address, l.city, l.district,
+    		COUNT(DISTINCT lm.animal_id) AS animal_count,
+    		l.created_timestamp
+		FROM location AS l
+		LEFT JOIN (
+ 		    SELECT lm.*
+		    FROM location_move lm
+		    INNER JOIN (
+ 		        SELECT
+            		animal_id,
+            		MAX(created_timestamp) AS latest_move
+        		FROM location_move
+        		GROUP BY animal_id
+    		) AS latest
+    		ON lm.animal_id = latest.animal_id AND lm.created_timestamp = latest.latest_move
+		) AS lm ON lm.new_location_name = l.farm_name
+		GROUP BY l.id, l.farm_name, l.created_timestamp
+		ORDER BY animal_count DESC;
+
         ';
 
         $stmt = pg_query($this->conn, $query);

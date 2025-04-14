@@ -30,7 +30,7 @@ class animal
 	        GROUP BY animal_id
         ) AS latest_lm ON a.id = latest_lm.animal_id
         LEFT JOIN location_move AS lm ON a.id = lm.animal_id AND lm.created_timestamp = latest_lm.latest_move
-        INNER JOIN location AS l ON lm.new_location_name = l.location_name
+        INNER JOIN location AS l ON lm.new_location_name = l.farm_name
         LEFT JOIN image AS i ON i.id = a.image_id
         INNER JOIN (
 	        SELECT animal_id, MAX(created_timestamp) as latest_weight

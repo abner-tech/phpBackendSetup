@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $result = $location->locationsSummary();
             if ($result && is_array(pg_fetch_all($result))) {
                 $movement_data = pg_fetch_all($result);
-                    http_response_code(response_code: 200);
-                    echo json_encode($movement_data);
+                http_response_code(response_code: 200);
+                echo json_encode($movement_data);
             } else {
                 http_response_code(response_code: 404);
                 echo json_encode(value: [
@@ -120,15 +120,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Get the JSON input
         $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
-        //handle register of location
-        if (!empty($data['farm_name'])) {
-            //prepare to insert data
-            $loc = '';
-            if (!empty($data['location'])) {
-                $loc = $data['location'];
-            }
+        $city = $data['city'] ?
+            $sanitizeClass->sanitizeStringOrNull($data['city']) : null;
+        $district = $data['district'] ?
+            $sanitizeClass->sanitizeStringOrNull($data['district']) : null;
+        $farm_name = $data['farm_name'] ?
+            $sanitizeClass->sanitizeStringOrNull($data['farm_name']) : null;
+        $notes = $data['notes'] ?
+            $sanitizeClass->sanitizeStringOrNull($data['notes']) : null;
+        $street_address = $data['street_address'] ?
+            $sanitizeClass->sanitizeStringOrNull($data['street_address']) : null;
 
-            $result = $location->createLocation($data['farm_name'], $loc);
+        //handle register of location
+        if ($city && $district && $farm_name && $city) {
+            //prepare to insert data
+            $result = $location->createLocation($farm_name, $city,
+             $district, $street_address, $notes);
             if ($result) {
                 http_response_code(response_code: 201);
                 echo json_encode(value: ['message' => 'location registered successfully', 'location_id' => $result]);
