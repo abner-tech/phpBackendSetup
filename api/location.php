@@ -43,8 +43,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 ]);
             }
         }
-    } else {
-        //just locations requested
+    } else if (isset($_GET['farm_id'])) { //single farm info requested
+        $farm_id = $_GET['farm_id'] ?
+            $sanitizeClass->sanitizeIntegerOrNull($_GET['farm_id']) : null;
+
+        $result = $location->location_record($farm_id);
+
+        if ($result) {
+            http_response_code(201);
+            echo json_encode($result);
+        } else {
+            http_response_code(response_code: 400);
+            echo json_encode(value: ['message' => 'Invalid input']);
+        }
+
+    } else { //just locations requested
 
 
         // Declare a variable to hold the result
@@ -134,8 +147,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         //handle register of location
         if ($city && $district && $farm_name && $city) {
             //prepare to insert data
-            $result = $location->createLocation($farm_name, $city,
-             $district, $street_address, $notes);
+            $result = $location->createLocation(
+                $farm_name,
+                $city,
+                $district,
+                $street_address,
+                $notes
+            );
             if ($result) {
                 http_response_code(response_code: 201);
                 echo json_encode(value: ['message' => 'location registered successfully', 'location_id' => $result]);

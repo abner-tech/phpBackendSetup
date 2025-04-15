@@ -235,6 +235,19 @@ class Location
         return $stmt;
     }
 
+    public function location_record($farm_id) {
+        $query = '
+        SELECT 
+            id, farm_name, street_address, city, district, notes, created_timestamp
+        FROM location
+        WHERE id = $1
+        ';
+
+        $stmt = pg_query_params( $this->conn, $query, [$farm_id]);
+        $result = pg_fetch_assoc($stmt, 0);
+        return $result;
+    }
+
 
 }
 
