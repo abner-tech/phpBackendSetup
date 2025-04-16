@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $result = $location->location_record($farm_id);
 
         if ($result) {
-            http_response_code(201);
+            http_response_code(200);
             echo json_encode($result);
         } else {
             http_response_code(response_code: 400);
@@ -82,10 +82,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    //sanitize and validate input
+    $farm_id = $data['id'] ?
+        $sanitizeClass->sanitizeIntegerOrNull($data['id']) : null;
+    $city = $data['city'] ?
+        $sanitizeClass->sanitizeStringOrNull($data['city']) : null;
+    $district = $data['district'] ?
+        $sanitizeClass->sanitizeStringOrNull($data['district']) : null;
+    // $farm_name = $data['farm_name'] ?
+    //     $sanitizeClass->sanitizeStringOrNull($data['farm_name']) : null;
+    $notes = $data['notes'] ?
+        $sanitizeClass->sanitizeStringOrNull($data['notes']) : null;
+    $street_address = $data['street_address'] ?
+        $sanitizeClass->sanitizeStringOrNull($data['street_address']) : null;
+    //handle register of location
+    if ($city && $district && $farm_id && $city) {
+        //prepare to insert data
+        $result = $location->updateLocation(
+            $farm_id,
+            $city,
+            $district,
+            $street_address,
+            $notes
+        );
+        if ($result) {
+            http_response_code(response_code: 201);
+            echo json_encode(value: ['message' => 'location registered successfully', 'location_id' => $result]);
+        }
+    } else {
+        http_response_code(response_code: 400);
+        echo json_encode(value: ['message' => 'Invalid input']);
+    }
+
+
+
+    exit;
+}
+
 // Handle POST request to add a new location
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (isset($_GET['new_animal_history']) && $_GET['new_animal_history'] === 'true') {
+    if (isset($_GET['new_animal_history']) && $_GET['new_animal_history'] === 'true') { // animal location update or insert
         $data = json_decode(file_get_contents("php://input"), true);
 
         // Sanitize and validate input
@@ -129,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("Server error: movement save failed. result: " . print_r($result, true));
         }
         // just a new farm locatio input
-    } else {
+    } else { //farm location registration
         // Get the JSON input
         $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 

@@ -235,7 +235,8 @@ class Location
         return $stmt;
     }
 
-    public function location_record($farm_id) {
+    public function location_record($farm_id)
+    {
         $query = '
         SELECT 
             id, farm_name, street_address, city, district, notes, created_timestamp
@@ -243,12 +244,49 @@ class Location
         WHERE id = $1
         ';
 
-        $stmt = pg_query_params( $this->conn, $query, [$farm_id]);
+        $stmt = pg_query_params($this->conn, $query, [$farm_id]);
         $result = pg_fetch_assoc($stmt, 0);
         return $result;
     }
 
 
+    public function updateLocation(
+        $id,
+        $street_address,
+        $city,
+        $district,
+        $notes
+    ) {
+        // Start transaction
+        pg_query($this->conn, 'BEGIN');
+    
+        $query = '
+            UPDATE location
+            SET 
+                street_address = $1,
+                city = $2,
+                district = $3, 
+                notes = $4
+            WHERE id = $5
+            RETURNING id';
+        
+        $result = pg_query_params($this->conn, $query, [
+            $street_address,
+            $city,
+            $district,
+            $notes,
+            $id
+        ]);
+    
+        if ($result) {
+            pg_query($this->conn, 'COMMIT');
+            return (int) pg_fetch_result($result, 0, 'id');
+        } else {
+            pg_query($this->conn, 'ROLLBACK');
+            return false;
+        }
+    }
+    
 }
 
 ?>
