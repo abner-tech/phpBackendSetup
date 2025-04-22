@@ -7,7 +7,6 @@ include_once '../core/initialize.php';
 $location = new Location(db: $dbconn);
 $sanitizeClass = new Sanitize();
 $imageClass = new Image($dbconn);
-$imageClass = new Image($dbconn);
 
 // Handle GET request to retrieve Locations
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
