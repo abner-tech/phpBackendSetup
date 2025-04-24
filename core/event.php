@@ -2,7 +2,7 @@
 
 use PgSql\Result;
 
-class animal
+class Event
 {
 
     //constructor with db connection
@@ -14,7 +14,7 @@ class animal
     }
 
     //add animal to db
-    public function addAnimal($event_name, $event_descrition)
+    public function addEvent($event_name, $event_descrition)
     {
         try {
             pg_query($this->conn, "BEGIN");

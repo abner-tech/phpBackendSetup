@@ -21,4 +21,6 @@ require_once __DIR__ . '/image.php';
 require_once __DIR__ . '/weight.php';
 
 require_once __DIR__ . '/sanitize.php';
+
+require_once __DIR__ . '/event.php'
 ?>

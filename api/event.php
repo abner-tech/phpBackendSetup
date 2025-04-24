@@ -5,6 +5,7 @@ include_once '../core/initialize.php';
 
 // Instantiate the User class
 $sanitizeClass = new Sanitize();
+$eventClass = new Event($dbconn);
 
 // Handle GET request to retrieve users
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -41,12 +42,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sanitizeClass->sanitizeStringOrNull($data['event_name']) : null;
     //handle register of user
     if ($event_name && $description) {
-        
 
-        $result = $color->createColor($data['color'], $desc);
-        if ($result) {
-            http_response_code(response_code: 201);
-            echo json_encode(value: ['message' => 'color registered successfully', 'color_id' => $result]);
+
+        $result = $eventClass->addEvent($event_name, $description);
+        if (is_int($result)) {
+            http_response_code(201);
+            echo json_encode([
+                'message' => 'New event movement saved with ID ' . $result
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'status_message' => 'server encountered an error and could not process your request',
+                'error' => $result,
+            ]);
+            error_log("Server error: movement save failed. result: " . print_r($result, true));
         }
     } else {
         http_response_code(response_code: 400);
