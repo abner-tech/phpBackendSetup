@@ -54,6 +54,15 @@ class Event
         }
     }
 
+    public function getEvents() {
+        $query = '
+            SELECt * FROM event
+        ';
+
+        $stmt = pg_query($this->conn, $query);
+        return $stmt;
+    }
+
 }
 
 ?>
