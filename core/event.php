@@ -56,13 +56,98 @@ class Event
 
     public function getEvents() {
         $query = '
-            SELECt * FROM event
+            SELECt 
+                id, 
+                event_name,
+                description,
+                created_timestamp
+            FROM event
         ';
 
         $stmt = pg_query($this->conn, $query);
         return $stmt;
     }
 
+    public function getEventByID($event_id) {
+        $query = '
+            SELECt 
+                id, 
+                event_name,
+                description,
+                created_timestamp
+            FROM event
+            WHERE id = $1
+        ';
+
+        $stmt = pg_query_params($this->conn, $query, [$event_id]);
+        return $stmt;
+    }
+
+    public function getEventLogs() {
+        $query = '
+            SELECt 
+                id, event_id, animal_id, status, memo, weight_id,
+                visible, event_date, created_timestamp 
+            FROM event_log
+        ';
+
+        $stmt = pg_query($this->conn, $query);
+        return $stmt;
+    }
+
+    public function addEventLog($event_id, $animal_id, $status, $memo, $weight_id) {
+        try {
+            pg_query($this->conn, "BEGIN");
+
+            $event_log_id = null;
+
+            $query = '
+            INSERT INTO event_log (
+                event_id, animal_id, status, memo, weight_id
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+            ';
+
+            $result = pg_query_params(
+                $this->conn,
+                $query,
+                [
+                    $event_id,
+                    $animal_id,
+                    $status,
+                    $memo,
+                    $weight_id
+                ]
+            );
+
+            if (!$result) {
+                throw new Exception("event log insert failed.");
+            }
+
+            $event_log_id = (int) pg_fetch_result($result, 0, 'id');
+
+            pg_query($this->conn, "COMMIT");
+            return $event_log_id;
+
+        } catch (Exception $e) {
+            // If any error happens, rollback everything
+            pg_query($this->conn, "ROLLBACK");
+            return $e->getMessage();
+        }
+    }
+    public function getEventLogByID($event_log_id) {
+        $query = '
+            SELECt 
+                id, event_id, animal_id, status, memo, weight_id,
+                visible, event_date, created_timestamp 
+            FROM event_log
+            WHERE id = $1
+        ';
+
+        $stmt = pg_query_params($this->conn, $query, [$event_log_id]);
+        return $stmt;
+    }
 }
 
 ?>
