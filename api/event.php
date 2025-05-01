@@ -121,6 +121,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+if($_SERVER["REQUEST_METHOD"] === "PUT") {
+    // Get the JSON input
+    $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
+
+    if (isset($_GET['event_id'])) { //adding and event log for
+        $event_id = $sanitizeClass->sanitizeIntegerOrNull($data['id']);
+        $event_name = $sanitizeClass->sanitizeStringOrNull($data['event_name']);
+        $description = $sanitizeClass->sanitizeStringOrNull($data['description']);
+
+        //handle register of user
+        if ($event_id && $event_name && $description) {
+            $result = $eventClass->updateEvent($event_id, $event_name, $description);
+            if ($result) {
+                http_response_code(200);
+                echo json_encode([
+                    'message' => "event with ID $event_id updated successfully"
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode([
+                    'status_message' => 'server encountered an error and could not process your request',
+                    'error' => $result,
+                ]);
+                error_log("Server error: movement save failed. result: " . print_r($result, true));
+            }
+        } else {
+            http_response_code(response_code: 400);
+            echo json_encode(value: ['message' => 'Invalid input']);
+        }   
+    } else { // just adding an event
+        http_response_code(response_code: 400);
+        echo json_encode(value: ['message' => 'Invalid input']);
+    }
+    exit;
+}
+
 // Handle preflight (CORS) requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(response_code: 200);

@@ -62,6 +62,7 @@ class Event
                 description,
                 created_timestamp
             FROM event
+            WHERE visible = true
         ';
 
         $stmt = pg_query($this->conn, $query);
@@ -89,6 +90,7 @@ class Event
                 id, event_id, animal_id, status, memo, weight_id,
                 visible, event_date, created_timestamp 
             FROM event_log
+            WHERE visible = true
         ';
 
         $stmt = pg_query($this->conn, $query);
@@ -147,6 +149,41 @@ class Event
 
         $stmt = pg_query_params($this->conn, $query, [$event_log_id]);
         return $stmt;
+    }
+
+    public function updateEvent($event_id, $event_name, $event_description) {
+        try {
+            pg_query($this->conn, "BEGIN");
+
+            $query = '
+                UPDATE event
+                SET event_name = $1, description = $2
+                WHERE id = $3
+                RETURNING id
+            ';
+
+            $result = pg_query_params(
+                $this->conn,
+                $query,
+                [
+                    $event_name,
+                    $event_description,
+                    $event_id
+                ]
+            );
+
+            if (!$result) {
+                throw new Exception("event update failed.");
+            }
+
+            pg_query($this->conn, "COMMIT");
+            return true;
+
+        } catch (Exception $e) {
+            // If any error happens, rollback everything
+            pg_query($this->conn, "ROLLBACK");
+            return false;
+        }
     }
 }
 
