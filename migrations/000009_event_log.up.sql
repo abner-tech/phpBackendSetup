@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS event_log (
     visible BOOLEAN NOT NULL DEFAULT TRUE,
     event_date timestamp(0) WITH TIME ZONE NOT NULL,
     added_by_id INT NOT NULL REFERENCES users(id),
+    image_id INT REFERENCES image(id),
     created_timestamp timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

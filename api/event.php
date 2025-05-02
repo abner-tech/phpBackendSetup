@@ -24,8 +24,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 "error" => $result
             ]);
         }
-    } else if (isset($_GET['event_logs'])) { //single event request
-
+    } else if (isset($_GET['event_type'])) { //event type search
+        $event_type = $sanitizeClass->sanitizeStringOrNull($_GET['event_type']);
+        $result = $eventClass->getEventByNameSearch($event_type);
+        if ($result) {
+            $result_data = pg_fetch_all($result);
+            http_response_code(response_code: 200);
+            echo json_encode($result_data);
+        } else {
+            http_response_code(response_code: 404);
+            echo json_encode(value: [
+                'status_message' => 'server encountered an error and could not process your request',
+                "error" => $result
+            ]);
+        }
+    } else if (isset($_GET['event_logs'])) { //single logs request
         $result = $eventClass->getEventLogs();
         if ($result) {
             $result_data = pg_fetch_all($result);
@@ -64,16 +77,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the JSON input
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
-    if (isset($_Get['event_log'])) { //adding and event log for
+    if (isset($_GET['event_log'])) { //adding and event log for an animal
         $event_id = $sanitizeClass->sanitizeIntegerOrNull($data['event_id']);
         $animal_id = $sanitizeClass->sanitizeIntegerOrNull($data['animal_id']);
         $status = $sanitizeClass->sanitizeStringOrNull($data['status']);
         $memo = $sanitizeClass->sanitizeStringOrNull($data['memo']);
-        $weight_id = $sanitizeClass->sanitizeIntegerOrNull($data['weight_id']);
+        $weight = $sanitizeClass->sanitizeIntegerOrNull($data['weight']);
+        $added_by_id = $sanitizeClass->sanitizeIntegerOrNull($data['added_by_id']);
+        $image_data = $data['image'] ? $data['image'] : null;
 
         //handle register of user
         if ($event_id && $animal_id && $status) {
-            $result = $eventClass->addEventLog($event_id, $animal_id, $status, $memo, $weight_id);
+            $result = $eventClass->addEventLog(
+                $event_id,
+                $animal_id,
+                $status,
+                $memo,
+                $weight,
+                $added_by_id,
+                $image_data
+            );
             if (is_int($result)) {
                 http_response_code(201);
                 echo json_encode([
@@ -90,16 +113,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             http_response_code(response_code: 400);
             echo json_encode(value: ['message' => 'Invalid input']);
-        }   
+        }
     } else { // just adding an event
         $description = $data['description'] ?
             $sanitizeClass->sanitizeStringOrNull($data['description']) : null;
         $event_name = $data['event_name'] ?
             $sanitizeClass->sanitizeStringOrNull($data['event_name']) : null;
+        $added_by_id = $data['added_by_id'] ?
+            $sanitizeClass->sanitizeIntegerOrNull($data['added_by_id']) : null;
         //handle register of user
         if ($event_name && $description) {
 
-            $result = $eventClass->addEvent($event_name, $description);
+            $result = $eventClass->addEvent($event_name, $description, $added_by_id);
             if (is_int($result)) {
                 http_response_code(201);
                 echo json_encode([
@@ -121,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-if($_SERVER["REQUEST_METHOD"] === "PUT") {
+if ($_SERVER["REQUEST_METHOD"] === "PUT") {
     // Get the JSON input
     $data = json_decode(json: file_get_contents(filename: "php://input"), associative: true);
 
@@ -149,7 +174,7 @@ if($_SERVER["REQUEST_METHOD"] === "PUT") {
         } else {
             http_response_code(response_code: 400);
             echo json_encode(value: ['message' => 'Invalid input']);
-        }   
+        }
     } else { // just adding an event
         http_response_code(response_code: 400);
         echo json_encode(value: ['message' => 'Invalid input']);

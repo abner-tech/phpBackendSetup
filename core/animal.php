@@ -232,6 +232,41 @@ class animal
         return $stmt;
     }
 
+    public function getAnimalByBLPH($animal_blph): bool|Result
+    {
+        $query = '
+        SELECT 
+            a.id, a.blpa_number, a.color_id, a.sire_id, a.dam_id, a.dob, a.gender, a.added_by_id, a.created_timestamp,
+            lm.new_location_name AS location, encode(i.image_data, \'escape\') AS image_data, wl.weight
+        FROM animal AS a
+        INNER JOIN (
+            SELECT animal_id, MAX(created_timestamp) AS latest_move
+            FROM location_move
+            GROUP BY animal_id
+        ) AS latest_lm ON a.id = latest_lm.animal_id
+        INNER JOIN location_move AS lm 
+            ON latest_lm.latest_move = lm.created_timestamp 
+            AND a.id = lm.animal_id
+        LEFT JOIN LATERAL (
+            SELECT i.image_data
+            FROM image AS i
+            WHERE i.id = a.image_id
+        ) AS i ON TRUE
+        INNER JOIN (
+            SELECT wl.animal_id, MAX(created_timestamp) AS latest_weight
+            FROM weight_log AS wl
+            GROUP BY wl.animal_id
+        ) AS latest_wl ON a.id = latest_wl.animal_id
+         LEFT JOIN weight_log
+         AS wl ON a.id = wl.animal_id AND wl.created_timestamp = latest_wl.latest_weight
+        WHERE (a.blpa_number::TEXT LIKE $1) 
+        AND a.visible = true
+        ';
+        $stmt = pg_query_params($this->conn, $query, [ "%$animal_blph%"]);
+        return $stmt;
+
+    }
+
 }
 
 ?>

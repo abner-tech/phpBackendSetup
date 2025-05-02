@@ -25,7 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         http_response_code(200);
         echo json_encode($animal_data);
 
-    } else if (isset($_GET['animal_id'])) { //single animal fetched
+    } else if (isset($_GET['search_blpa'])) { //animal serach BLPH
+        $search_blph = (int) $_GET['search_blpa'] ? $_GET['search_blpa'] : 0;
+        $result = $animal->getAnimalByBLPH($search_blph);
+
+        if (!$result) {
+            http_response_code(404);
+            echo json_encode(value: ['message' => 'requested resource not found']);
+            exit;
+        }
+
+        $animal_data = pg_fetch_all($result);
+        http_response_code(200);
+        echo json_encode($animal_data);
+
+
+    }else if (isset($_GET['animal_id'])) { //single animal fetched
         $animal_id = (int) $_GET['animal_id'] ? $_GET['animal_id'] : 0;
         $result = $animal->getAnimalByID($animal_id);
 
